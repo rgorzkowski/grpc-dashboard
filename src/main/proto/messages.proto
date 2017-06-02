@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+option java_package = "pl.stepwise.grpc.dashboard.messages";
+
+message Employee {
+    int32 id = 1;
+    string login = 2;
+    string firstName = 3;
+    string lastName = 4;
+    repeated Vacation vacations = 5;
+}
+
+message Vacation {
+    int32 id = 1;
+    int64 startDate = 2;
+    float duration = 3;
+    bool isCancelled = 4;
+}
+
+service EmployeeService {
+    rpc GetAll (GetAllRequest) returns (stream EmployeeResponse);
+    rpc GetByLogin (GetByLoginRequest) returns (EmployeeResponse);
+    rpc Save (EmployeeRequest) returns (EmployeeResponse);
+    rpc SaveAll (stream EmployeeRequest) returns (stream EmployeeResponse);
+}
+
+message GetAllRequest {
+}
+message GetByLoginRequest {
+    int32 badgeNumber = 1;
+}
+message EmployeeRequest {
+    Employee employee = 1;
+}
+message EmployeeResponse {
+    Employee employee = 1;
+}
