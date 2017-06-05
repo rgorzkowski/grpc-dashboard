@@ -6,6 +6,8 @@ import java.nio.file.Paths;
 
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
+import io.grpc.ServerInterceptors;
+import io.grpc.ServerServiceDefinition;
 
 /**
  * Created by rafal on 6/2/17.
@@ -30,8 +32,13 @@ public class EmployeeServiceServer {
         File cert = getFileFromClassPath("certs/cert.pem");
         File key = getFileFromClassPath("certs/key.pem");
 
+        EmployeeService employeeService = new EmployeeService();
+        ServerServiceDefinition serviceDefinition =
+                ServerInterceptors.interceptForward(employeeService, new MetadataServerInterceptor());
+
         server = ServerBuilder.forPort(port)
                 .useTransportSecurity(cert, key)
+                .addService(serviceDefinition)
                 .build()
                 .start();
         System.out.println("Listening on port " + port);

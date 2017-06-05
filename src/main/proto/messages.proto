@@ -27,7 +27,7 @@ service EmployeeService {
 message GetAllRequest {
 }
 message GetByLoginRequest {
-    int32 badgeNumber = 1;
+    string login = 1;
 }
 message EmployeeRequest {
     Employee employee = 1;
