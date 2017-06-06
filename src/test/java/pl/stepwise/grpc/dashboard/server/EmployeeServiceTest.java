@@ -15,6 +15,9 @@ import io.grpc.stub.StreamObserver;
 import io.grpc.testing.StreamRecorder;
 import pl.stepwise.grpc.dashboard.messages.EmployeeServiceGrpc;
 import pl.stepwise.grpc.dashboard.messages.Messages;
+import pl.stepwise.grpc.dashboard.messages.Messages.Employee;
+import pl.stepwise.grpc.dashboard.messages.Messages.EmployeeRequest;
+import pl.stepwise.grpc.dashboard.messages.Messages.EmployeeResponse;
 import pl.stepwise.grpc.dashboard.messages.Messages.UploadPhotoRequest;
 import pl.stepwise.grpc.dashboard.messages.Messages.UploadPhotoResponse;
 import org.junit.After;
@@ -26,6 +29,7 @@ import com.google.common.io.ByteStreams;
 import com.google.protobuf.ByteString;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.util.Lists.newArrayList;
 
 @RunWith(JUnit4.class)
 public class EmployeeServiceTest {
@@ -69,10 +73,10 @@ public class EmployeeServiceTest {
                 .newBlockingStub(inProcessChannel);
 
         //when
-        Messages.EmployeeResponse response = blockingStub
+        EmployeeResponse response = blockingStub
                 .getByLogin(Messages.GetByLoginRequest.newBuilder().setLogin("rgorzkowski").build());
 
-        Messages.Employee employee = response.getEmployee();
+        Employee employee = response.getEmployee();
 
         //then
         assertThat(employee.getFirstName()).isEqualTo("Rafal");
@@ -90,7 +94,7 @@ public class EmployeeServiceTest {
                 .newBlockingStub(inProcessChannel);
 
         //when
-        Iterator<Messages.EmployeeResponse> all = blockingStub.getAll(Messages.GetAllRequest.newBuilder().build());
+        Iterator<EmployeeResponse> all = blockingStub.getAll(Messages.GetAllRequest.newBuilder().build());
 
         //then
         assertThat(all).hasSize(3);
@@ -123,8 +127,9 @@ public class EmployeeServiceTest {
         requestObserver.onCompleted();
 
         //then
-        assertThat(responseObserver.firstValue().get().getStatus()).isEqualTo("OK");
-
+        UploadPhotoResponse response = responseObserver.firstValue().get();
+        assertThat(response.getStatus()).isEqualTo("OK");
+        assertThat(response.getBody().size()).isEqualTo(photoByteArray.length);
     }
 
     private List<byte[]> split(byte[] photo, int blockSize) {
@@ -140,5 +145,40 @@ public class EmployeeServiceTest {
             result.add(Arrays.copyOfRange(photo, startIdx, startIdx + photo.length % blockSize));
         }
         return result;
+    }
+
+    @Test
+    public void shouldSaveAll() throws Exception {
+        //given
+        EmployeeServiceGrpc.EmployeeServiceStub stub = EmployeeServiceGrpc.newStub(inProcessChannel);
+
+        //when
+        StreamRecorder<EmployeeResponse> responseObserver = StreamRecorder.create();
+        StreamObserver<EmployeeRequest> requestObserver = stub.saveAll(responseObserver);
+
+        List<EmployeeRequest> requests = newArrayList(
+                Employee.newBuilder()
+                        .setFirstName("Jan")
+                        .setLastName("Kowalik")
+                        .build(),
+                Employee.newBuilder()
+                        .setFirstName("Marcin")
+                        .setLastName("Opania")
+                        .build()
+                )
+                .stream()
+                .map(employee -> EmployeeRequest.newBuilder()
+                        .setEmployee(employee)
+                        .build()
+                )
+                .collect(Collectors.toList());
+
+        for (EmployeeRequest request : requests) {
+            requestObserver.onNext(request);
+        }
+        requestObserver.onCompleted();
+
+        //then
+        assertThat(responseObserver.getValues()).hasSize(2);
     }
 }

@@ -42,4 +42,5 @@ message UploadPhotoRequest {
 }
 message UploadPhotoResponse {
     string status = 1;
+    bytes body = 2;
 }

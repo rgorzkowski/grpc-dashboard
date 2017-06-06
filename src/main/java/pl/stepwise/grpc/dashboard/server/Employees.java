@@ -8,6 +8,8 @@ public class Employees extends ArrayList<Messages.Employee> {
 
     private static Employees employees;
 
+    private static int seq = 0;
+
     public static Employees getInstance() {
         if (employees == null) {
             employees = new Employees();
@@ -38,4 +40,11 @@ public class Employees extends ArrayList<Messages.Employee> {
                 .build());
     }
 
+    @Override
+    public boolean add(Messages.Employee employee) {
+        Messages.Employee copy = Messages.Employee.newBuilder(employee)
+                .setId(++seq)
+                .build();
+        return super.add(copy);
+    }
 }

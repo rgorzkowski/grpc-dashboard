@@ -3,6 +3,10 @@ package pl.stepwise.grpc.dashboard.server;
 import io.grpc.stub.StreamObserver;
 import pl.stepwise.grpc.dashboard.messages.EmployeeServiceGrpc;
 import pl.stepwise.grpc.dashboard.messages.Messages;
+import pl.stepwise.grpc.dashboard.messages.Messages.Employee;
+import pl.stepwise.grpc.dashboard.messages.Messages.EmployeeRequest;
+import pl.stepwise.grpc.dashboard.messages.Messages.EmployeeResponse;
+import pl.stepwise.grpc.dashboard.messages.Messages.UploadPhotoRequest;
 import com.google.protobuf.ByteString;
 
 /**
@@ -13,10 +17,10 @@ public class EmployeeService extends EmployeeServiceGrpc.EmployeeServiceImplBase
     // unary call
     @Override
     public void getByLogin(Messages.GetByLoginRequest request,
-            StreamObserver<Messages.EmployeeResponse> responseObserver) {
-        for (Messages.Employee employee : Employees.getInstance()) {
+            StreamObserver<EmployeeResponse> responseObserver) {
+        for (Employee employee : Employees.getInstance()) {
             if (employee.getLogin().equals(request.getLogin())) {
-                Messages.EmployeeResponse response = Messages.EmployeeResponse.newBuilder()
+                EmployeeResponse response = EmployeeResponse.newBuilder()
                         .setEmployee(employee)
                         .build();
                 responseObserver.onNext(response);
@@ -29,9 +33,9 @@ public class EmployeeService extends EmployeeServiceGrpc.EmployeeServiceImplBase
 
     //server side streaming
     @Override
-    public void getAll(Messages.GetAllRequest request, StreamObserver<Messages.EmployeeResponse> responseObserver) {
-        for (Messages.Employee employee : Employees.getInstance()) {
-            Messages.EmployeeResponse response = Messages.EmployeeResponse.newBuilder()
+    public void getAll(Messages.GetAllRequest request, StreamObserver<EmployeeResponse> responseObserver) {
+        for (Employee employee : Employees.getInstance()) {
+            EmployeeResponse response = EmployeeResponse.newBuilder()
                     .setEmployee(employee)
                     .build();
             responseObserver.onNext(response);
@@ -42,14 +46,14 @@ public class EmployeeService extends EmployeeServiceGrpc.EmployeeServiceImplBase
 
     //client side streaming
     @Override
-    public StreamObserver<Messages.UploadPhotoRequest> uploadPhoto(
+    public StreamObserver<UploadPhotoRequest> uploadPhoto(
             StreamObserver<Messages.UploadPhotoResponse> responseObserver) {
-        return new StreamObserver<Messages.UploadPhotoRequest>() {
+        return new StreamObserver<UploadPhotoRequest>() {
 
             private ByteString photo;
 
             @Override
-            public void onNext(Messages.UploadPhotoRequest value) {
+            public void onNext(UploadPhotoRequest value) {
                 if (photo == null) {
                     photo = value.getData();
                 } else {
@@ -69,8 +73,39 @@ public class EmployeeService extends EmployeeServiceGrpc.EmployeeServiceImplBase
                 responseObserver.onNext(
                         Messages.UploadPhotoResponse.newBuilder()
                                 .setStatus("OK")
+                                .setBody(photo)
                                 .build()
                 );
+                responseObserver.onCompleted();
+            }
+        };
+    }
+
+    // bidirectional streaming
+    @Override
+    public StreamObserver<EmployeeRequest> saveAll(StreamObserver<EmployeeResponse> responseObserver) {
+        return new StreamObserver<EmployeeRequest>() {
+            @Override
+            public void onNext(EmployeeRequest value) {
+                Employees.getInstance().add(value.getEmployee());
+                responseObserver.onNext(
+                        EmployeeResponse.newBuilder()
+                                .setEmployee(value.getEmployee())
+                                .build()
+                );
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                t.printStackTrace();
+            }
+
+            @Override
+            public void onCompleted() {
+                System.out.println("On completed method has been called.");
+                for (Employee e : Employees.getInstance()) {
+                    System.out.println(e);
+                }
                 responseObserver.onCompleted();
             }
         };
