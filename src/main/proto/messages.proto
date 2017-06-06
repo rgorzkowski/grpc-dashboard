@@ -22,6 +22,7 @@ service EmployeeService {
     rpc GetByLogin (GetByLoginRequest) returns (EmployeeResponse);
     rpc Save (EmployeeRequest) returns (EmployeeResponse);
     rpc SaveAll (stream EmployeeRequest) returns (stream EmployeeResponse);
+    rpc UploadPhoto (stream UploadPhotoRequest) returns (UploadPhotoResponse);
 }
 
 message GetAllRequest {
@@ -34,4 +35,11 @@ message EmployeeRequest {
 }
 message EmployeeResponse {
     Employee employee = 1;
+}
+
+message UploadPhotoRequest {
+    bytes data = 1;
+}
+message UploadPhotoResponse {
+    string status = 1;
 }

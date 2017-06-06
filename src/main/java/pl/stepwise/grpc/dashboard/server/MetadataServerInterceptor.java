@@ -16,7 +16,7 @@ public class MetadataServerInterceptor implements ServerInterceptor {
             Metadata metadata,
             ServerCallHandler<ReqT, RespT> next) {
         if (serverCall.getMethodDescriptor().getFullMethodName()
-                .equals("EmployeeService/GetByLogin")) {
+                .startsWith("EmployeeService")) {
             for (String key : metadata.keys()) {
                 System.out.println(key + ":" + metadata.get(Metadata.Key.of(key, Metadata.ASCII_STRING_MARSHALLER)));
             }
