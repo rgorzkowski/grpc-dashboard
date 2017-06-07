@@ -1,6 +1,9 @@
 package pl.stepwise.grpc.dashboard.client;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.concurrent.TimeUnit;
@@ -13,6 +16,7 @@ import io.grpc.StatusRuntimeException;
 import io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.NettyChannelBuilder;
 import io.grpc.stub.MetadataUtils;
+import io.grpc.stub.StreamObserver;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -23,11 +27,16 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import pl.stepwise.grpc.dashboard.common.FileSupport;
 import pl.stepwise.grpc.dashboard.messages.Messages;
 import pl.stepwise.grpc.dashboard.messages.UserServiceGrpc;
+import com.google.common.io.ByteStreams;
+import com.google.protobuf.ByteString;
 
 import static pl.stepwise.grpc.dashboard.common.FileSupport.getFileFromClassPath;
+import static pl.stepwise.grpc.dashboard.common.FileSupport.split;
 
 /**
  * Created by rafal on 6/7/17.
@@ -107,9 +116,20 @@ public class UserServiceClient extends Application {
             secondStage.show();
         });
 
+        final FileChooser fileChooser = new FileChooser();
+
+        final Button uploadFileButton = new Button("Upload a Picture...");
+        uploadFileButton.setOnAction(event -> {
+            File file = fileChooser.showOpenDialog(primaryStage);
+            if (file != null) {
+                uploadFile(file);
+            }
+        });
+
         grid.add(btn, 0, 1);
         grid.add(btn2, 0, 2);
         grid.add(btn3, 0, 3);
+        grid.add(uploadFileButton, 0, 4);
 
         BorderPane root = new BorderPane();
         root.setPadding(new Insets(10));
@@ -120,6 +140,46 @@ public class UserServiceClient extends Application {
         primaryStage.setTitle("grpc Client");
         primaryStage.setScene(scene);
         primaryStage.show();
+    }
+
+    private void uploadFile(File file) {
+        try {
+            StreamObserver<Messages.UploadPhotoRequest> requestStream = asyncClient
+                    .uploadPhoto(new StreamObserver<Messages.UploadPhotoResponse>() {
+                        @Override
+                        public void onNext(Messages.UploadPhotoResponse response) {
+                            System.out.println(response.getStatus());
+                            System.out.println("Photo size -> " + response.getBody().size());
+                        }
+
+                        @Override
+                        public void onError(Throwable t) {
+                            t.printStackTrace();
+                        }
+
+                        @Override
+                        public void onCompleted() {
+                            //do nothing
+                        }
+                    });
+            byte[] photoByteArray = ByteStreams.toByteArray(new FileInputStream(file));
+            List<byte[]> chunks = FileSupport.split(photoByteArray, 10 * 2014);
+
+            final List<Messages.UploadPhotoRequest> requests = split(photoByteArray, 10_000)
+                    .stream()
+                    .map(bytes ->
+                            Messages.UploadPhotoRequest.newBuilder()
+                                    .setData(ByteString.copyFrom(bytes))
+                                    .build()
+                    ).collect(Collectors.toList());
+
+            requests.forEach(r -> requestStream.onNext(r));
+            requestStream.onCompleted();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 
     private void sendMetadata() {

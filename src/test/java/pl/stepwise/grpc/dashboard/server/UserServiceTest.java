@@ -1,7 +1,5 @@
 package pl.stepwise.grpc.dashboard.server;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -30,6 +28,7 @@ import com.google.protobuf.ByteString;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.util.Lists.newArrayList;
+import static pl.stepwise.grpc.dashboard.common.FileSupport.split;
 
 @RunWith(JUnit4.class)
 public class UserServiceTest {
@@ -130,21 +129,6 @@ public class UserServiceTest {
         UploadPhotoResponse response = responseObserver.firstValue().get();
         assertThat(response.getStatus()).isEqualTo("OK");
         assertThat(response.getBody().size()).isEqualTo(photoByteArray.length);
-    }
-
-    private List<byte[]> split(byte[] photo, int blockSize) {
-        List<byte[]> result = new ArrayList<>();
-        int fullBlockCount = photo.length / blockSize;
-
-        for (int i = 0; i < fullBlockCount; i++) {
-            int startIdx = i * blockSize;
-            result.add(Arrays.copyOfRange(photo, startIdx, startIdx + blockSize));
-        }
-        if (photo.length % blockSize > 0) {
-            int startIdx = fullBlockCount * blockSize;
-            result.add(Arrays.copyOfRange(photo, startIdx, startIdx + photo.length % blockSize));
-        }
-        return result;
     }
 
     @Test

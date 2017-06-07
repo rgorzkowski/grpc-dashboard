@@ -1,15 +1,20 @@
 package pl.stepwise.grpc.dashboard.server;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
 import io.grpc.Metadata;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
-import pl.stepwise.grpc.dashboard.messages.UserServiceGrpc;
 import pl.stepwise.grpc.dashboard.messages.Messages;
+import pl.stepwise.grpc.dashboard.messages.Messages.UploadPhotoRequest;
 import pl.stepwise.grpc.dashboard.messages.Messages.User;
 import pl.stepwise.grpc.dashboard.messages.Messages.UserRequest;
 import pl.stepwise.grpc.dashboard.messages.Messages.UserResponse;
-import pl.stepwise.grpc.dashboard.messages.Messages.UploadPhotoRequest;
+import pl.stepwise.grpc.dashboard.messages.UserServiceGrpc;
+import org.apache.commons.io.IOUtils;
 import com.google.protobuf.ByteString;
 
 /**
@@ -36,7 +41,7 @@ public class UserService extends UserServiceGrpc.UserServiceImplBase {
         md.put(Metadata.Key.of("missingLogin", Metadata.ASCII_STRING_MARSHALLER), request.getLogin());
         responseObserver.onError(
                 new StatusRuntimeException(Status.NOT_FOUND, md)
-//                new Exception("User not found with login: " + request.getLogin())
+                //                new Exception("User not found with login: " + request.getLogin())
         );
     }
 
@@ -86,6 +91,16 @@ public class UserService extends UserServiceGrpc.UserServiceImplBase {
                                 .build()
                 );
                 responseObserver.onCompleted();
+
+                try {
+                    File tmpFile = File.createTempFile("photo", null);
+                    tmpFile.deleteOnExit();
+                    FileOutputStream out = new FileOutputStream(tmpFile);
+                    IOUtils.copy(photo.newInput(), out);
+                    System.out.println("File path -> " + tmpFile);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         };
     }
