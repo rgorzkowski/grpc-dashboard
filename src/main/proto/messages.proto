@@ -7,14 +7,12 @@ message User {
     string login = 2;
     string firstName = 3;
     string lastName = 4;
-    repeated Vacation vacations = 5;
+    repeated Skill skills = 5;
 }
 
-message Vacation {
+message Skill {
     int32 id = 1;
-    int64 startDate = 2;
-    float duration = 3;
-    bool isCancelled = 4;
+    string name = 2;
 }
 
 service UserService {

@@ -1,10 +1,10 @@
 package pl.stepwise.grpc.dashboard.server;
 
-import java.util.ArrayList;
+import java.util.LinkedList;
 
 import pl.stepwise.grpc.dashboard.messages.Messages;
 
-public class Users extends ArrayList<Messages.User> {
+public class Users extends LinkedList<Messages.User> {
 
     private static Users users;
 
@@ -46,5 +46,9 @@ public class Users extends ArrayList<Messages.User> {
                 .setId(++seq)
                 .build();
         return super.add(copy);
+    }
+
+    public Messages.User getLastElement() {
+        return this.getLast();
     }
 }

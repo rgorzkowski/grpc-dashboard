@@ -114,7 +114,7 @@ public class UserService extends UserServiceGrpc.UserServiceImplBase {
                 Users.getInstance().add(value.getUser());
                 responseObserver.onNext(
                         UserResponse.newBuilder()
-                                .setUser(value.getUser())
+                                .setUser(Users.getInstance().getLastElement())
                                 .build()
                 );
             }

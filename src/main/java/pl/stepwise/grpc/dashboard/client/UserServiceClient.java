@@ -29,12 +29,12 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import pl.stepwise.grpc.dashboard.common.FileSupport;
 import pl.stepwise.grpc.dashboard.messages.Messages;
 import pl.stepwise.grpc.dashboard.messages.UserServiceGrpc;
 import com.google.common.io.ByteStreams;
 import com.google.protobuf.ByteString;
 
+import static com.google.common.collect.Lists.newArrayList;
 import static pl.stepwise.grpc.dashboard.common.FileSupport.getFileFromClassPath;
 import static pl.stepwise.grpc.dashboard.common.FileSupport.split;
 
@@ -118,7 +118,7 @@ public class UserServiceClient extends Application {
 
         final FileChooser fileChooser = new FileChooser();
 
-        final Button uploadFileButton = new Button("Upload a Picture...");
+        final Button uploadFileButton = createButton("Upload a Picture...");
         uploadFileButton.setOnAction(event -> {
             File file = fileChooser.showOpenDialog(primaryStage);
             if (file != null) {
@@ -126,10 +126,60 @@ public class UserServiceClient extends Application {
             }
         });
 
+        Button saveAllBtn = createButton("Save all request");
+        saveAllBtn.setOnAction(event -> {
+            List<Messages.UserRequest> requests = newArrayList(
+                    Messages.User.newBuilder()
+                            .setFirstName("Jan")
+                            .setLastName("Kowalik")
+                            .build(),
+                    Messages.User.newBuilder()
+                            .setFirstName("Marcin")
+                            .setLastName("Opania")
+                            .build()
+            )
+                    .stream()
+                    .map(User -> Messages.UserRequest.newBuilder()
+                            .setUser(User)
+                            .build()
+                    )
+                    .collect(Collectors.toList());
+
+            StreamObserver<Messages.UserRequest> stream = asyncClient
+                    .saveAll(new StreamObserver<Messages.UserResponse>() {
+                        @Override
+                        public void onNext(Messages.UserResponse value) {
+                            System.out.println(Thread.currentThread() + ".Received -> " + value);
+                        }
+
+                        @Override
+                        public void onError(Throwable t) {
+                            t.printStackTrace();
+                        }
+
+                        @Override
+                        public void onCompleted() {
+                            //do nothing
+                        }
+                    });
+            requests.forEach(r -> {
+                System.out.println(Thread.currentThread() + ".Sending -> " + r);
+                stream.onNext(r);
+                try {
+                    TimeUnit.MILLISECONDS.sleep(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            });
+            stream.onCompleted();
+
+        });
+
         grid.add(btn, 0, 1);
         grid.add(btn2, 0, 2);
         grid.add(btn3, 0, 3);
         grid.add(uploadFileButton, 0, 4);
+        grid.add(saveAllBtn, 0, 4);
 
         BorderPane root = new BorderPane();
         root.setPadding(new Insets(10));
@@ -163,8 +213,6 @@ public class UserServiceClient extends Application {
                         }
                     });
             byte[] photoByteArray = ByteStreams.toByteArray(new FileInputStream(file));
-            List<byte[]> chunks = FileSupport.split(photoByteArray, 10 * 2014);
-
             final List<Messages.UploadPhotoRequest> requests = split(photoByteArray, 10_000)
                     .stream()
                     .map(bytes ->
