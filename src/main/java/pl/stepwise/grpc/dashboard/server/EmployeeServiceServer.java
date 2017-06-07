@@ -1,13 +1,13 @@
 package pl.stepwise.grpc.dashboard.server;
 
 import java.io.File;
-import java.net.URISyntaxException;
-import java.nio.file.Paths;
 
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.ServerInterceptors;
 import io.grpc.ServerServiceDefinition;
+
+import static pl.stepwise.grpc.dashboard.common.FileSupport.getFileFromClassPath;
 
 /**
  * Created by rafal on 6/2/17.
@@ -36,7 +36,8 @@ public class EmployeeServiceServer {
         ServerServiceDefinition serviceDefinition =
                 ServerInterceptors.interceptForward(employeeService, new MetadataServerInterceptor());
 
-        server = ServerBuilder.forPort(port)
+        server = ServerBuilder
+                .forPort(port)
                 .useTransportSecurity(cert, key)
                 .addService(serviceDefinition)
                 .build()
@@ -55,11 +56,6 @@ public class EmployeeServiceServer {
         if (server != null) {
             server.shutdown();
         }
-    }
-
-    private File getFileFromClassPath(String path) throws URISyntaxException {
-        return Paths.get(getClass().getClassLoader().getResource(path).toURI())
-                .toFile();
     }
 
 }
