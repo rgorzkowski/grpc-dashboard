@@ -1,6 +1,11 @@
 package pl.stepwise.grpc.dashboard.client;
 
+import java.util.Iterator;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import io.grpc.ManagedChannel;
 import io.grpc.Metadata;
@@ -19,8 +24,8 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
-import pl.stepwise.grpc.dashboard.messages.UserServiceGrpc;
 import pl.stepwise.grpc.dashboard.messages.Messages;
+import pl.stepwise.grpc.dashboard.messages.UserServiceGrpc;
 
 import static pl.stepwise.grpc.dashboard.common.FileSupport.getFileFromClassPath;
 
@@ -57,7 +62,6 @@ public class UserServiceClient extends Application {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try {
                 System.out.println("Closing channel");
-                TimeUnit.MICROSECONDS.sleep(500);
                 channel.shutdown();
                 channel.awaitTermination(2, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
@@ -85,8 +89,27 @@ public class UserServiceClient extends Application {
             secondStage.show();
         });
 
+        Button btn3 = createButton("Server side streaming");
+        btn3.setOnAction(event -> {
+            Iterator<Messages.UserResponse> allUsers = getAllUsers();
+            String allUsersAsString = StreamSupport
+                    .stream(Spliterators.spliteratorUnknownSize(allUsers, Spliterator.ORDERED), false)
+                    .map(Messages.UserResponse::getUser)
+                    .map(Object::toString)
+                    .collect(Collectors.joining(System.lineSeparator()));
+
+            StackPane secondaryLayout = new StackPane();
+            secondaryLayout.getChildren().add(new Label(allUsersAsString));
+
+            Stage secondStage = new Stage();
+            secondStage.setTitle("Unary response");
+            secondStage.setScene(new Scene(secondaryLayout, 400, 600));
+            secondStage.show();
+        });
+
         grid.add(btn, 0, 1);
         grid.add(btn2, 0, 2);
+        grid.add(btn3, 0, 3);
 
         BorderPane root = new BorderPane();
         root.setPadding(new Insets(10));
@@ -122,6 +145,10 @@ public class UserServiceClient extends Application {
 
         System.out.println(response.getUser());
         return response;
+    }
+
+    private Iterator<Messages.UserResponse> getAllUsers() {
+        return blockingClient.getAll(Messages.GetAllRequest.newBuilder().build());
     }
 
     private GridPane createGrid() {
