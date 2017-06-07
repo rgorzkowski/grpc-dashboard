@@ -2,10 +2,9 @@ package pl.stepwise.grpc.dashboard.client;
 
 import java.util.concurrent.TimeUnit;
 
-import io.grpc.Channel;
-import io.grpc.ClientInterceptors;
 import io.grpc.ManagedChannel;
 import io.grpc.Metadata;
+import io.grpc.StatusRuntimeException;
 import io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.NettyChannelBuilder;
 import io.grpc.stub.MetadataUtils;
@@ -93,12 +92,17 @@ public class EmployeeServiceClient extends Application {
         Metadata metadata = new Metadata();
         metadata.put(Metadata.Key.of("username", Metadata.ASCII_STRING_MARSHALLER), "rgorzkowski");
         metadata.put(Metadata.Key.of("password", Metadata.ASCII_STRING_MARSHALLER), "password");
-
-//        Channel ch = ClientInterceptors.intercept(blockingClient.getChannel(),
-//                MetadataUtils.newAttachHeadersInterceptor(metadata));
-
-        blockingClient.withInterceptors(MetadataUtils.newAttachHeadersInterceptor(metadata))
-                .getByLogin(Messages.GetByLoginRequest.newBuilder().build());
+        try {
+            Messages.EmployeeResponse response = blockingClient
+                    .withInterceptors(MetadataUtils.newAttachHeadersInterceptor(metadata))
+                    .getByLogin(Messages.GetByLoginRequest.newBuilder().setLogin("testTest1234").build());
+        } catch (StatusRuntimeException e) {
+            System.out.println(e.getStatus());
+            Metadata trailers = e.getTrailers();
+            trailers.keys().forEach(key ->
+                    System.out.println(
+                            key + " -> " + trailers.get(Metadata.Key.of(key, Metadata.ASCII_STRING_MARSHALLER))));
+        }
     }
 
     private GridPane createGrid() {

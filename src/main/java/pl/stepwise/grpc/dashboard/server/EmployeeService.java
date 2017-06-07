@@ -1,5 +1,10 @@
 package pl.stepwise.grpc.dashboard.server;
 
+import io.grpc.Metadata;
+import io.grpc.Status;
+import io.grpc.StatusException;
+import io.grpc.StatusRuntimeException;
+import io.grpc.stub.MetadataUtils;
 import io.grpc.stub.StreamObserver;
 import pl.stepwise.grpc.dashboard.messages.EmployeeServiceGrpc;
 import pl.stepwise.grpc.dashboard.messages.Messages;
@@ -28,7 +33,13 @@ public class EmployeeService extends EmployeeServiceGrpc.EmployeeServiceImplBase
                 return;
             }
         }
-        responseObserver.onError(new Exception("Employee not found with login: " + request.getLogin()));
+
+        Metadata md = new Metadata();
+        md.put(Metadata.Key.of("missingLogin", Metadata.ASCII_STRING_MARSHALLER), request.getLogin());
+        responseObserver.onError(
+                new StatusRuntimeException(Status.NOT_FOUND, md)
+//                new Exception("Employee not found with login: " + request.getLogin())
+        );
     }
 
     //server side streaming
