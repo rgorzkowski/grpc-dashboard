@@ -2,31 +2,29 @@ package pl.stepwise.grpc.dashboard.server;
 
 import io.grpc.Metadata;
 import io.grpc.Status;
-import io.grpc.StatusException;
 import io.grpc.StatusRuntimeException;
-import io.grpc.stub.MetadataUtils;
 import io.grpc.stub.StreamObserver;
-import pl.stepwise.grpc.dashboard.messages.EmployeeServiceGrpc;
+import pl.stepwise.grpc.dashboard.messages.UserServiceGrpc;
 import pl.stepwise.grpc.dashboard.messages.Messages;
-import pl.stepwise.grpc.dashboard.messages.Messages.Employee;
-import pl.stepwise.grpc.dashboard.messages.Messages.EmployeeRequest;
-import pl.stepwise.grpc.dashboard.messages.Messages.EmployeeResponse;
+import pl.stepwise.grpc.dashboard.messages.Messages.User;
+import pl.stepwise.grpc.dashboard.messages.Messages.UserRequest;
+import pl.stepwise.grpc.dashboard.messages.Messages.UserResponse;
 import pl.stepwise.grpc.dashboard.messages.Messages.UploadPhotoRequest;
 import com.google.protobuf.ByteString;
 
 /**
  * Created by rafal on 6/5/17.
  */
-public class EmployeeService extends EmployeeServiceGrpc.EmployeeServiceImplBase {
+public class UserService extends UserServiceGrpc.UserServiceImplBase {
 
     // unary call
     @Override
     public void getByLogin(Messages.GetByLoginRequest request,
-            StreamObserver<EmployeeResponse> responseObserver) {
-        for (Employee employee : Employees.getInstance()) {
-            if (employee.getLogin().equals(request.getLogin())) {
-                EmployeeResponse response = EmployeeResponse.newBuilder()
-                        .setEmployee(employee)
+            StreamObserver<UserResponse> responseObserver) {
+        for (User User : Users.getInstance()) {
+            if (User.getLogin().equals(request.getLogin())) {
+                UserResponse response = UserResponse.newBuilder()
+                        .setUser(User)
                         .build();
                 responseObserver.onNext(response);
                 responseObserver.onCompleted(); // unary call
@@ -38,16 +36,16 @@ public class EmployeeService extends EmployeeServiceGrpc.EmployeeServiceImplBase
         md.put(Metadata.Key.of("missingLogin", Metadata.ASCII_STRING_MARSHALLER), request.getLogin());
         responseObserver.onError(
                 new StatusRuntimeException(Status.NOT_FOUND, md)
-//                new Exception("Employee not found with login: " + request.getLogin())
+//                new Exception("User not found with login: " + request.getLogin())
         );
     }
 
     //server side streaming
     @Override
-    public void getAll(Messages.GetAllRequest request, StreamObserver<EmployeeResponse> responseObserver) {
-        for (Employee employee : Employees.getInstance()) {
-            EmployeeResponse response = EmployeeResponse.newBuilder()
-                    .setEmployee(employee)
+    public void getAll(Messages.GetAllRequest request, StreamObserver<UserResponse> responseObserver) {
+        for (User User : Users.getInstance()) {
+            UserResponse response = UserResponse.newBuilder()
+                    .setUser(User)
                     .build();
             responseObserver.onNext(response);
         }
@@ -94,14 +92,14 @@ public class EmployeeService extends EmployeeServiceGrpc.EmployeeServiceImplBase
 
     // bidirectional streaming
     @Override
-    public StreamObserver<EmployeeRequest> saveAll(StreamObserver<EmployeeResponse> responseObserver) {
-        return new StreamObserver<EmployeeRequest>() {
+    public StreamObserver<UserRequest> saveAll(StreamObserver<UserResponse> responseObserver) {
+        return new StreamObserver<UserRequest>() {
             @Override
-            public void onNext(EmployeeRequest value) {
-                Employees.getInstance().add(value.getEmployee());
+            public void onNext(UserRequest value) {
+                Users.getInstance().add(value.getUser());
                 responseObserver.onNext(
-                        EmployeeResponse.newBuilder()
-                                .setEmployee(value.getEmployee())
+                        UserResponse.newBuilder()
+                                .setUser(value.getUser())
                                 .build()
                 );
             }
@@ -114,7 +112,7 @@ public class EmployeeService extends EmployeeServiceGrpc.EmployeeServiceImplBase
             @Override
             public void onCompleted() {
                 System.out.println("On completed method has been called.");
-                for (Employee e : Employees.getInstance()) {
+                for (User e : Users.getInstance()) {
                     System.out.println(e);
                 }
                 responseObserver.onCompleted();

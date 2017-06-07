@@ -2,7 +2,7 @@ syntax = "proto3";
 
 option java_package = "pl.stepwise.grpc.dashboard.messages";
 
-message Employee {
+message User {
     int32 id = 1;
     string login = 2;
     string firstName = 3;
@@ -17,11 +17,11 @@ message Vacation {
     bool isCancelled = 4;
 }
 
-service EmployeeService {
-    rpc GetAll (GetAllRequest) returns (stream EmployeeResponse);
-    rpc GetByLogin (GetByLoginRequest) returns (EmployeeResponse);
-    rpc Save (EmployeeRequest) returns (EmployeeResponse);
-    rpc SaveAll (stream EmployeeRequest) returns (stream EmployeeResponse);
+service UserService {
+    rpc GetAll (GetAllRequest) returns (stream UserResponse);
+    rpc GetByLogin (GetByLoginRequest) returns (UserResponse);
+    rpc Save (UserRequest) returns (UserResponse);
+    rpc SaveAll (stream UserRequest) returns (stream UserResponse);
     rpc UploadPhoto (stream UploadPhotoRequest) returns (UploadPhotoResponse);
 }
 
@@ -30,11 +30,11 @@ message GetAllRequest {
 message GetByLoginRequest {
     string login = 1;
 }
-message EmployeeRequest {
-    Employee employee = 1;
+message UserRequest {
+    User user = 1;
 }
-message EmployeeResponse {
-    Employee employee = 1;
+message UserResponse {
+    User user = 1;
 }
 
 message UploadPhotoRequest {

@@ -4,35 +4,35 @@ import java.util.ArrayList;
 
 import pl.stepwise.grpc.dashboard.messages.Messages;
 
-public class Employees extends ArrayList<Messages.Employee> {
+public class Users extends ArrayList<Messages.User> {
 
-    private static Employees employees;
+    private static Users users;
 
     private static int seq = 0;
 
-    public static Employees getInstance() {
-        if (employees == null) {
-            employees = new Employees();
+    public static Users getInstance() {
+        if (users == null) {
+            users = new Users();
         }
-        return employees;
+        return users;
     }
 
-    private Employees() {
-        this.add(Messages.Employee.newBuilder()
+    private Users() {
+        this.add(Messages.User.newBuilder()
                 .setId(1)
                 .setLogin("rgorzkowski")
                 .setFirstName("Rafal")
                 .setLastName("Gorzkowski")
                 .build());
 
-        this.add(Messages.Employee.newBuilder()
+        this.add(Messages.User.newBuilder()
                 .setId(2)
                 .setLogin("jkowalski")
                 .setFirstName("Jan")
                 .setLastName("Kowalki")
                 .build());
 
-        this.add(Messages.Employee.newBuilder()
+        this.add(Messages.User.newBuilder()
                 .setId(3)
                 .setLogin("anowak")
                 .setFirstName("Anna")
@@ -41,8 +41,8 @@ public class Employees extends ArrayList<Messages.Employee> {
     }
 
     @Override
-    public boolean add(Messages.Employee employee) {
-        Messages.Employee copy = Messages.Employee.newBuilder(employee)
+    public boolean add(Messages.User User) {
+        Messages.User copy = Messages.User.newBuilder(User)
                 .setId(++seq)
                 .build();
         return super.add(copy);

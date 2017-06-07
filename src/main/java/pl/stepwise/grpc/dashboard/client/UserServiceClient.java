@@ -13,11 +13,13 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
-import pl.stepwise.grpc.dashboard.messages.EmployeeServiceGrpc;
+import pl.stepwise.grpc.dashboard.messages.UserServiceGrpc;
 import pl.stepwise.grpc.dashboard.messages.Messages;
 
 import static pl.stepwise.grpc.dashboard.common.FileSupport.getFileFromClassPath;
@@ -25,13 +27,13 @@ import static pl.stepwise.grpc.dashboard.common.FileSupport.getFileFromClassPath
 /**
  * Created by rafal on 6/7/17.
  */
-public class EmployeeServiceClient extends Application {
+public class UserServiceClient extends Application {
 
-    EmployeeServiceGrpc.EmployeeServiceBlockingStub blockingClient;
+    UserServiceGrpc.UserServiceBlockingStub blockingClient;
 
-    EmployeeServiceGrpc.EmployeeServiceStub asyncClient;
+    UserServiceGrpc.UserServiceStub asyncClient;
 
-    public EmployeeServiceClient() throws Exception {
+    public UserServiceClient() throws Exception {
         initializeConnections();
     }
 
@@ -48,9 +50,9 @@ public class EmployeeServiceClient extends Application {
                                 .build()
                 ).build();
 
-        blockingClient = EmployeeServiceGrpc.newBlockingStub(channel);
+        blockingClient = UserServiceGrpc.newBlockingStub(channel);
 
-        asyncClient = EmployeeServiceGrpc.newStub(channel);
+        asyncClient = UserServiceGrpc.newStub(channel);
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try {
@@ -71,8 +73,17 @@ public class EmployeeServiceClient extends Application {
         Button btn = createButton("Send metadata");
         btn.setOnAction(event -> sendMetadata());
 
-        Button btn2 = createButton("222");
-        btn2.setOnAction(event -> System.out.println("Hello World!"));
+        Button btn2 = createButton("Send unary request");
+        btn2.setOnAction(event -> {
+            Messages.UserResponse response = sendUnaryRequest();
+            StackPane secondaryLayout = new StackPane();
+            secondaryLayout.getChildren().add(new Label(response.getUser().toString()));
+
+            Stage secondStage = new Stage();
+            secondStage.setTitle("Unary response");
+            secondStage.setScene(new Scene(secondaryLayout, 200, 100));
+            secondStage.show();
+        });
 
         grid.add(btn, 0, 1);
         grid.add(btn2, 0, 2);
@@ -93,7 +104,7 @@ public class EmployeeServiceClient extends Application {
         metadata.put(Metadata.Key.of("username", Metadata.ASCII_STRING_MARSHALLER), "rgorzkowski");
         metadata.put(Metadata.Key.of("password", Metadata.ASCII_STRING_MARSHALLER), "password");
         try {
-            Messages.EmployeeResponse response = blockingClient
+            blockingClient
                     .withInterceptors(MetadataUtils.newAttachHeadersInterceptor(metadata))
                     .getByLogin(Messages.GetByLoginRequest.newBuilder().setLogin("testTest1234").build());
         } catch (StatusRuntimeException e) {
@@ -103,6 +114,14 @@ public class EmployeeServiceClient extends Application {
                     System.out.println(
                             key + " -> " + trailers.get(Metadata.Key.of(key, Metadata.ASCII_STRING_MARSHALLER))));
         }
+    }
+
+    private Messages.UserResponse sendUnaryRequest() {
+        Messages.UserResponse response = blockingClient
+                .getByLogin(Messages.GetByLoginRequest.newBuilder().setLogin("rgorzkowski").build());
+
+        System.out.println(response.getUser());
+        return response;
     }
 
     private GridPane createGrid() {

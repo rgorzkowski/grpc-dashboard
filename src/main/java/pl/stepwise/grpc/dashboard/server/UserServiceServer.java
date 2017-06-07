@@ -12,13 +12,13 @@ import static pl.stepwise.grpc.dashboard.common.FileSupport.getFileFromClassPath
 /**
  * Created by rafal on 6/2/17.
  */
-public class EmployeeServiceServer {
+public class UserServiceServer {
 
     private Server server;
 
     public static void main(String[] args) {
         try {
-            EmployeeServiceServer serviceServer = new EmployeeServiceServer();
+            UserServiceServer serviceServer = new UserServiceServer();
             serviceServer.start();
         } catch (Exception e) {
             e.printStackTrace();
@@ -32,9 +32,9 @@ public class EmployeeServiceServer {
         File cert = getFileFromClassPath("certs/cert.pem");
         File key = getFileFromClassPath("certs/key.pem");
 
-        EmployeeService employeeService = new EmployeeService();
+        UserService UserService = new UserService();
         ServerServiceDefinition serviceDefinition =
-                ServerInterceptors.interceptForward(employeeService, new MetadataServerInterceptor());
+                ServerInterceptors.interceptForward(UserService, new MetadataServerInterceptor());
 
         server = ServerBuilder
                 .forPort(port)
@@ -46,7 +46,7 @@ public class EmployeeServiceServer {
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("Shutting down server");
-            EmployeeServiceServer.this.stop();
+            UserServiceServer.this.stop();
         }));
 
         server.awaitTermination();
